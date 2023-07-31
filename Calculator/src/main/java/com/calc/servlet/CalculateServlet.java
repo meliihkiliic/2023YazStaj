@@ -1,13 +1,11 @@
 package com.calc.servlet;
 
+import com.calc.facade.CalculateFacade;
+import com.calc.util.DBConnection;
+
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.sql.Timestamp;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -19,7 +17,7 @@ public class CalculateServlet extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
+    	
         //gelen veriler degiskenlere ataniyor.
 
         double num1 = Integer.parseInt(request.getParameter("num1"));
@@ -58,40 +56,22 @@ public class CalculateServlet extends HttpServlet {
             default:
                 break;
         }
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String currentDateAndTime = dateFormat.format(new Date());
         
         String resultMessage = num1 + " " + operator + " " + num2 + " = " + result;
 
+
         try {
-            // PostgreSQL JDBC sürücüsünü yüklemek için.
-            Class.forName("org.postgresql.Driver");
-            // Veritabanına bağlanmak için gerekli bilgileri tanımlıyoruz.
-            String url = "jdbc:postgresql://localhost:5432/calculation_logs";
-            String username = "postgres";
-            String password = "9658";
+            // Veritabanı bağlantısını singleton tasarım deseni ile elde ediyoruz.
+            Connection connection = DBConnection.getInstance().getConnection();
+            // Facade deseni ile loglama işlemini gerçekleştiriyoruz.
+            CalculateFacade calculateFacade = new CalculateFacade(connection);
+            calculateFacade.logResult(num1, num2, operator, result);
 
-            // Veritabanına bağlantı açıyoruz.
-            Connection connection = DriverManager.getConnection(url, username, password);
-
-            // Veritabanına log mesajını ve oluşturulma tarihini eklemek için bir sorgu hazırlıyoruz.
-            String insertQuery = "INSERT INTO logs (log_message, created_at) VALUES (?, ?)";
-            PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
-            preparedStatement.setString(1, resultMessage);
-            // Şu anki zamanı alarak Timestamp nesnesine dönüştürüp sorguya ekliyoruz.
-            preparedStatement.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-
-            // Sorguyu veritabanına gönderiyoruz ve log kaydını ekliyoruz.
-            preparedStatement.executeUpdate();
-
-            // Kullanılan kaynakları kapatıyoruz.
-            preparedStatement.close();
-            connection.close();
-        } catch (ClassNotFoundException | SQLException e) {
+        } catch (SQLException e) {
             // Eğer veritabanı işlemlerinde hata olursa, hatayı yazdırıyoruz.
             e.printStackTrace();
         }
+
 
 
         request.setAttribute("resultMessage", resultMessage);
