@@ -1,5 +1,9 @@
 package com.calc.servlet;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+
 import com.calc.facade.CalculateFacade;
 import com.calc.util.DBConnection;
 
@@ -14,9 +18,13 @@ import javax.servlet.http.HttpServletResponse;
 
 public class CalculateServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
+    private static final Logger logger = LogManager.getLogger(CalculateServlet.class);
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+    	
+    	// Methoda girildiğinin kaydını tutuyoruz
+        logger.debug("Entering doPost method.");
     	
         //gelen veriler degiskenlere ataniyor.
 
@@ -66,15 +74,22 @@ public class CalculateServlet extends HttpServlet {
             // Facade deseni ile loglama işlemini gerçekleştiriyoruz.
             CalculateFacade calculateFacade = new CalculateFacade(connection);
             calculateFacade.logResult(num1, num2, operator, result);
+            
+            calculateFacade.logResult(num1, num2, operator, result);
 
         } catch (SQLException e) {
             // Eğer veritabanı işlemlerinde hata olursa, hatayı yazdırıyoruz.
             e.printStackTrace();
+            
+            logger.error("Error occurred while performing database operations.", e);
         }
 
 
 
         request.setAttribute("resultMessage", resultMessage);
         request.getRequestDispatcher("result.jsp").forward(request, response);
+        
+        //Methoddan çıkıldığının kaydını tutuyoruz.
+        logger.debug("Exiting doPost method.");
     }
 }
